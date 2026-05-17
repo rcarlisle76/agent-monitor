@@ -11,7 +11,8 @@ Each stage is graded independently by a strict grader agent.
 Workers whose rolling accuracy drops below 70% are flagged, terminated,
 and replaced by a new worker that picks up the remaining subtopics.
 
-The orchestrator compiles all findings into a final report.
+The orchestrator compiles all findings into a final report and a PowerPoint
+presentation for each worker.
 
 Usage:
     python research_pipeline.py
@@ -19,11 +20,11 @@ Usage:
     python research_pipeline.py --topic "the Roman Empire" --workers 4
 
 Requirements:
-    pip install anthropic
+    pip install anthropic python-pptx
     Set ANTHROPIC_API_KEY in your environment.
 
 Output:
-    reports/<topic>/worker-1.md, worker-2.md, ...
+    reports/<topic>/worker-1.md, worker-1.pptx, worker-2.md, worker-2.pptx, ...
     reports/<topic>/final_report.md
 """
 
@@ -95,6 +96,113 @@ def strict_grade(stage: str, subtopic: str, content: str) -> float:
     )
     match = re.search(r"\d+(?:\.\d+)?", raw)
     return min(100.0, max(0.0, float(match.group()))) if match else 60.0
+
+
+def create_pptx(worker_id: str, topic: str, findings: list, reports_dir: Path, final_acc: float) -> None:
+    try:
+        from pptx import Presentation
+        from pptx.dml.color import RGBColor
+        from pptx.util import Inches, Pt
+    except ImportError:
+        print(f"  [{worker_id}] Skipping PPTX — run: pip install python-pptx")
+        return
+
+    DARK_BG   = RGBColor(0x0F, 0x17, 0x2A)
+    ACCENT    = RGBColor(0x63, 0x66, 0xF1)
+    WHITE     = RGBColor(0xFF, 0xFF, 0xFF)
+    SUBTEXT   = RGBColor(0x9C, 0xA3, 0xAF)
+
+    prs = Presentation()
+    prs.slide_width  = Inches(13.33)
+    prs.slide_height = Inches(7.5)
+    blank = prs.slide_layouts[6]  # fully blank layout
+
+    def set_bg(slide):
+        fill = slide.background.fill
+        fill.solid()
+        fill.fore_color.rgb = DARK_BG
+
+    def add_text(slide, text, left, top, width, height, size, bold=False, color=WHITE, wrap=True):
+        from pptx.util import Emu
+        tb = slide.shapes.add_textbox(Inches(left), Inches(top), Inches(width), Inches(height))
+        tf = tb.text_frame
+        tf.word_wrap = wrap
+        p = tf.paragraphs[0]
+        p.text = text
+        run = p.runs[0]
+        run.font.size = Pt(size)
+        run.font.bold = bold
+        run.font.color.rgb = color
+        return tb
+
+    # ── Title slide ──────────────────────────────────────────────────────────
+    slide = prs.slides.add_slide(blank)
+    set_bg(slide)
+    add_text(slide, topic.title(), 0.6, 2.2, 12.0, 1.4, 40, bold=True)
+    add_text(slide, f"{worker_id}  ·  Final accuracy: {final_acc:.1f}%",
+             0.6, 3.8, 12.0, 0.6, 18, color=SUBTEXT)
+    add_text(slide, f"{len(findings)} subtopic{'s' if len(findings) != 1 else ''} researched",
+             0.6, 4.5, 12.0, 0.5, 14, color=SUBTEXT)
+
+    # ── One slide per subtopic ────────────────────────────────────────────────
+    for f in findings:
+        bullets_raw = claude(
+            f"Summarize this research into exactly 4 concise bullet points.\n"
+            f"Each bullet must be one clear sentence. No leading dashes or symbols.\n\n"
+            f"{f['research'][:900]}",
+            max_tokens=220,
+        )
+        bullets = [b.strip().lstrip("-•* \t") for b in bullets_raw.splitlines() if b.strip()][:4]
+
+        analysis_raw = claude(
+            f"Give the single most important implication of this analysis in one sentence (max 20 words):\n\n"
+            f"{f['analysis'][:600]}",
+            max_tokens=60,
+        )
+
+        slide = prs.slides.add_slide(blank)
+        set_bg(slide)
+
+        # Accent bar
+        bar = slide.shapes.add_shape(
+            1,  # MSO_SHAPE_TYPE.RECTANGLE
+            Inches(0), Inches(0), Inches(13.33), Inches(0.06),
+        )
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = ACCENT
+        bar.line.fill.background()
+
+        add_text(slide, f['subtopic'], 0.5, 0.25, 12.3, 0.9, 24, bold=True)
+
+        scores = f["scores"]
+        score_line = (
+            f"Research {scores['research']:.0f}%  ·  "
+            f"Fact-check {scores['fact_check']:.0f}%  ·  "
+            f"Analysis {scores['analysis']:.0f}%  ·  "
+            f"Avg {f['avg']:.0f}%"
+        )
+        add_text(slide, score_line, 0.5, 1.15, 12.3, 0.4, 11, color=SUBTEXT)
+
+        # Bullet points
+        from pptx.util import Inches as I, Pt
+        tb = slide.shapes.add_textbox(I(0.5), I(1.65), I(12.3), I(3.8))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        for i, bullet in enumerate(bullets):
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.text = f"• {bullet}"
+            run = p.runs[0]
+            run.font.size = Pt(15)
+            run.font.color.rgb = WHITE
+            p.space_after = Pt(8)
+
+        # Key implication
+        add_text(slide, f"Key insight: {analysis_raw.strip()}",
+                 0.5, 6.5, 12.3, 0.7, 12, color=ACCENT)
+
+    pptx_path = reports_dir / f"{worker_id}.pptx"
+    prs.save(str(pptx_path))
+    print(f"  [{worker_id}] Presentation saved: {pptx_path}")
 
 
 def process_subtopic(worker_id: str, subtopic: str) -> dict | None:
@@ -182,6 +290,7 @@ def run_worker(
     worker_id: str,
     subtopics: list,
     reports_dir: Path,
+    topic: str = "",
     replaces: str | None = None,
 ) -> None:
     monitor.running(
@@ -206,7 +315,7 @@ def run_worker(
             replacement_id = f"{worker_id}-v2"
             remaining = subtopics[i + 1:]
             if remaining:
-                run_worker(replacement_id, remaining, reports_dir, replaces=worker_id)
+                run_worker(replacement_id, remaining, reports_dir, topic=topic, replaces=worker_id)
             return
 
         findings.append(result)
@@ -227,7 +336,7 @@ def run_worker(
             replacement_id = f"{worker_id}-v2"
             remaining = subtopics[i + 1:]
             if remaining:
-                run_worker(replacement_id, remaining, reports_dir, replaces=worker_id)
+                run_worker(replacement_id, remaining, reports_dir, topic=topic, replaces=worker_id)
             return
 
     # Write worker report
@@ -247,6 +356,9 @@ def run_worker(
         ]
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"  [{worker_id}] Report saved: {report_path}")
+
+    monitor.running(worker_id, "Building presentation", parent_id="orchestrator", accuracy=final_acc)
+    create_pptx(worker_id, topic, findings, reports_dir, final_acc)
 
     with _results_lock:
         _worker_results[worker_id] = {"findings": findings, "accuracy": final_acc}
@@ -293,6 +405,7 @@ def main(topic: str, num_workers: int) -> None:
         t = threading.Thread(
             target=run_worker,
             args=(worker_id, assigned, reports_dir),
+            kwargs={"topic": topic},
             daemon=True,
         )
         threads.append(t)

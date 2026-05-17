@@ -1,0 +1,14 @@
+services:
+  agent-monitor:
+    image: rcarlisle1976/agent-monitor:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - db_data:/app/data
+    environment:
+      - DB_PATH=/app/data/agent_monitor.db
+      - ACCURACY_FLAG_THRESHOLD=70.0   # flag agents whose accuracy drops below this
+    restart: unless-stopped
+
+volumes:
+  db_data:

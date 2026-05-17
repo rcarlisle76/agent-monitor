@@ -23,6 +23,18 @@ docker run -d -p 3000:3000 -v agent-monitor-data:/app/data rcarlisle1976/agent-m
 
 ---
 
+## Screenshots
+
+![Hierarchy — live agent tree with accuracy bars](docs/screenshots/hierarchy.png)
+
+![Status transitions — worker-1 completed, others still running](docs/screenshots/hierarchy-status.png)
+
+![Metrics panel](docs/screenshots/metrics.png)
+
+![History — per-agent task log](docs/screenshots/history.png)
+
+---
+
 ## What you get
 
 | Panel | Description |

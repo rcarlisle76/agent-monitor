@@ -7,7 +7,7 @@ A real-time dashboard for monitoring AI agent pipelines. Agents report their sta
 ## Quick start
 
 ```bash
-curl -O https://raw.githubusercontent.com/rcarlisle1976/agent-monitor/main/docker-compose.deploy.yml
+curl -O https://raw.githubusercontent.com/rcarlisle76/agent-monitor/main/docker-compose.deploy.yml
 docker compose -f docker-compose.deploy.yml up
 ```
 

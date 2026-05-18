@@ -292,3 +292,13 @@ This spins up an orchestrator and workers that process documents, report accurac
 | `rcarlisle1976/agent-monitor` | All-in-one: FastAPI backend + React dashboard (Nginx + supervisord) |
 
 Built for `linux/amd64`.
+
+---
+
+## Changelog
+
+### 2026-05-18
+- **Fix** — Hierarchy view now correctly shows the "↺ replacing X" label on replacement agent nodes (was reading from `metadata` instead of the top-level `replaces` field)
+- **Fix** — Replacement History panel now refreshes immediately when a replacement agent first reports in (same root cause)
+- **Fix** — `demo_agents.py` multi-worker document queue was not thread-safe; fixed with a shared lock and `deque.popleft()` replacing the unguarded `list.pop(0)`
+- **Fix** — Live Feed React keys were index-based, causing unnecessary full-list re-renders on every new event; now uses a stable monotonic counter

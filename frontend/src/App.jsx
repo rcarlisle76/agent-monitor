@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import HierarchyTree from './components/HierarchyTree'
 import LiveFeed from './components/LiveFeed'
 import MetricsPanel from './components/MetricsPanel'
@@ -21,9 +21,25 @@ const STATUS_DOT = {
   connecting: 'bg-gray-400',
 }
 
+function useTheme() {
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored) return stored === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  return [dark, setDark]
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('feed')
   const [clearing, setClearing] = useState(false)
+  const [dark, setDark] = useTheme()
   const { lastEvent, connectionStatus } = useWebSocket()
   const queryClient = useQueryClient()
 
@@ -45,11 +61,11 @@ export default function App() {
   })
 
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-100 font-mono">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-mono">
       {/* Sidebar */}
-      <aside className="w-48 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
-        <div className="px-4 py-5 border-b border-gray-800">
-          <h1 className="text-sm font-bold tracking-widest text-indigo-400 uppercase">
+      <aside className="w-48 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
+        <div className="px-4 py-5 border-b border-gray-200 dark:border-gray-800">
+          <h1 className="text-sm font-bold tracking-widest text-indigo-600 dark:text-indigo-400 uppercase">
             Agent Monitor
           </h1>
         </div>
@@ -62,13 +78,13 @@ export default function App() {
               className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center justify-between ${
                 activeTab === tab.id
                   ? 'bg-indigo-600 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               <span>{tab.label}</span>
               {tab.id === 'replacements' && chains.length > 0 && (
                 <span className={`text-xs rounded-full px-1.5 py-0.5 font-mono ${
-                  activeTab === tab.id ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-300'
+                  activeTab === tab.id ? 'bg-indigo-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}>
                   {chains.length}
                 </span>
@@ -77,22 +93,31 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="px-4 py-3 border-t border-gray-800 flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${STATUS_DOT[connectionStatus]}`} />
-          <span className="text-xs text-gray-500 capitalize">{connectionStatus}</span>
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${STATUS_DOT[connectionStatus]}`} />
+            <span className="text-xs text-gray-400 dark:text-gray-500 capitalize">{connectionStatus}</span>
+          </div>
+          <button
+            onClick={() => setDark(d => !d)}
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-base leading-none"
+          >
+            {dark ? '☀' : '☽'}
+          </button>
         </div>
       </aside>
 
       {/* Main content */}
       <main className="flex-1 overflow-hidden flex flex-col">
-        <header className="px-6 py-4 border-b border-gray-800 bg-gray-900 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-200">
+        <header className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
             {TABS.find((t) => t.id === activeTab)?.label}
           </h2>
           <button
             onClick={handleClear}
             disabled={clearing}
-            className="px-3 py-1.5 rounded text-xs font-medium bg-gray-800 text-gray-400 hover:bg-red-950 hover:text-red-400 border border-gray-700 hover:border-red-800 transition-colors disabled:opacity-50"
+            className="px-3 py-1.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800 transition-colors disabled:opacity-50"
           >
             {clearing ? 'Clearing…' : 'Clear All'}
           </button>

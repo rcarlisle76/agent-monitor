@@ -169,20 +169,20 @@ export default function HierarchyTree({ lastEvent }) {
 
   return (
     <div className="h-full w-full flex flex-col">
-      <div className="px-4 py-2 border-b border-gray-800 flex items-center justify-between">
+      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
         {flaggedCount > 0 ? (
           <div className="flex items-center gap-2">
-            <span className="text-red-400 text-sm font-semibold">
+            <span className="text-red-500 dark:text-red-400 text-sm font-semibold">
               ⚑ {flaggedCount} agent{flaggedCount > 1 ? 's' : ''} flagged for termination
             </span>
-            <span className="text-red-600 text-xs">(accuracy below 70%)</span>
+            <span className="text-red-400 dark:text-red-600 text-xs">(accuracy below 70%)</span>
           </div>
         ) : <div />}
-        <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
             onClick={() => setDirection('LR')}
             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-              direction === 'LR' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'
+              direction === 'LR' ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
             title="Horizontal layout (orchestrator left, workers spread right)"
           >
@@ -191,7 +191,7 @@ export default function HierarchyTree({ lastEvent }) {
           <button
             onClick={() => setDirection('TB')}
             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-              direction === 'TB' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'
+              direction === 'TB' ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
             title="Vertical layout (orchestrator top, workers spread down)"
           >
@@ -200,7 +200,7 @@ export default function HierarchyTree({ lastEvent }) {
         </div>
       </div>
       {nodes.length === 0 ? (
-        <p className="text-gray-600 text-sm mt-8 text-center">No agents reported yet…</p>
+        <p className="text-gray-400 dark:text-gray-600 text-sm mt-8 text-center">No agents reported yet…</p>
       ) : (
         <div className="flex-1">
           <ReactFlow

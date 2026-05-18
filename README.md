@@ -299,6 +299,9 @@ Built for `linux/amd64`.
 
 ## Changelog
 
+### 2026-05-18 (2)
+- **Feature** — Light/dark mode toggle (☽/☀) in the sidebar footer; preference persists across sessions via localStorage and defaults to the OS setting. All panels and the Hierarchy canvas (node cards, edge colours, background, ReactFlow chrome) respond to the theme.
+
 ### 2026-05-18
 - **Fix** — Hierarchy view now correctly shows the "↺ replacing X" label on replacement agent nodes (was reading from `metadata` instead of the top-level `replaces` field)
 - **Fix** — Replacement History panel now refreshes immediately when a replacement agent first reports in (same root cause)

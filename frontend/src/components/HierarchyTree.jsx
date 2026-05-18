@@ -111,7 +111,7 @@ function layoutNodes(agents, direction = 'LR') {
       task: a.current_task,
       accuracy: a.current_accuracy,
       flagged: a.flagged,
-      replaces: a.metadata?.replaces ?? null,
+      replaces: a.replaces ?? null,
       direction,
     },
     position: { x: 0, y: 0 },
@@ -184,18 +184,18 @@ export default function HierarchyTree({ lastEvent }) {
             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
               direction === 'LR' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'
             }`}
-            title="Vertical layout (orchestrator left, workers stacked)"
+            title="Horizontal layout (orchestrator left, workers spread right)"
           >
-            Vertical
+            Horizontal
           </button>
           <button
             onClick={() => setDirection('TB')}
             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
               direction === 'TB' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-gray-200'
             }`}
-            title="Horizontal layout (orchestrator top, workers spread)"
+            title="Vertical layout (orchestrator top, workers spread down)"
           >
-            Horizontal
+            Vertical
           </button>
         </div>
       </div>

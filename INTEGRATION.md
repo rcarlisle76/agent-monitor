@@ -95,12 +95,12 @@ import requests
 MONITOR = "http://localhost:3000"
 
 def report(agent_id, status, task=None, **kwargs):
-    requests.post(f"{MONITOR}/api/report", json={
+    return requests.post(f"{MONITOR}/api/report", json={
         "agent_id": agent_id,
         "status": status,
         "task": task,
         **kwargs
-    }, timeout=5)
+    }, timeout=5).json()
 
 report("my-agent", "running", "Processing batch", accuracy=88.0, parent_id="orchestrator")
 report("my-agent", "completed", accuracy=91.5)

@@ -30,10 +30,12 @@ function AccuracyBadge({ accuracy }) {
 
 export default function LiveFeed({ lastEvent }) {
   const [events, setEvents] = useState([])
+  const seqRef = useRef(0)
 
   useEffect(() => {
     if (!lastEvent) return
-    setEvents((prev) => [lastEvent, ...prev].slice(0, 500))
+    const keyed = { ...lastEvent, _seq: seqRef.current++ }
+    setEvents((prev) => [keyed, ...prev].slice(0, 500))
   }, [lastEvent])
 
   return (
@@ -52,9 +54,9 @@ export default function LiveFeed({ lastEvent }) {
         {events.length === 0 && (
           <p className="text-gray-600 text-sm mt-8 text-center">Waiting for agent events…</p>
         )}
-        {events.map((evt, i) => (
+        {events.map((evt) => (
           <div
-            key={i}
+            key={evt._seq}
             className={`flex items-start gap-3 py-2 border-b last:border-0 ${
               evt.status === 'terminated'
                 ? 'border-gray-800 opacity-60'

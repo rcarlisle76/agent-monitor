@@ -140,7 +140,7 @@ export default function ReplacementHistory({ lastEvent }) {
   })
 
   useEffect(() => {
-    if (lastEvent?.status === 'terminated' || lastEvent?.metadata?.replaces) {
+    if (lastEvent?.status === 'terminated' || lastEvent?.replaces) {
       refetch()
     }
   }, [lastEvent, refetch])

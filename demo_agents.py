@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import collections
 import random
 import time
 import urllib.error
@@ -96,12 +97,12 @@ def report(url, agent_id, status, task=None, parent_id=None, metadata=None, accu
 # ---------------------------------------------------------------------------
 
 class Worker:
-    def __init__(self, worker_id, parent_id, docs_queue, url,
+    def __init__(self, worker_id, parent_id, docs_queue, docs_lock, url,
                  stop_event, flagged_callback, base_accuracy_mean=82):
         self.worker_id = worker_id
         self.parent_id = parent_id
-        self.docs_queue = docs_queue   # list used as a shared queue (pop from front)
-        self.docs_lock = threading.Lock()
+        self.docs_queue = docs_queue   # deque shared across all workers
+        self.docs_lock = docs_lock     # shared lock — one per Orchestrator
         self.url = url
         self.stop_event = stop_event   # set by orchestrator to terminate this worker
         self.flagged_callback = flagged_callback  # called when this worker gets flagged
@@ -181,7 +182,8 @@ class Worker:
                    parent_id=self.parent_id)
 
     def _next_doc(self):
-        return self.docs_queue.pop(0) if self.docs_queue else None
+        with self.docs_lock:
+            return self.docs_queue.popleft() if self.docs_queue else None
 
 
 # ---------------------------------------------------------------------------
@@ -192,8 +194,8 @@ class Orchestrator:
     def __init__(self, url, num_workers, docs):
         self.url = url
         self.num_workers = num_workers
-        self.docs = list(docs)          # shared queue (mutated by workers)
-        self.docs_lock = threading.Lock()
+        self.docs = collections.deque(docs)   # shared queue (mutated by workers)
+        self.docs_lock = threading.Lock()     # guards self.docs across worker threads
         self.workers: dict[str, Worker] = {}
         self.stop_events: dict[str, threading.Event] = {}
         self.replacement_counters: dict[str, int] = {}  # worker_id -> generation
@@ -239,6 +241,7 @@ class Orchestrator:
             worker_id=worker_id,
             parent_id="orchestrator",
             docs_queue=self.docs,
+            docs_lock=self.docs_lock,
             url=self.url,
             stop_event=stop_event,
             flagged_callback=self._on_flagged,

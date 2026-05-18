@@ -304,3 +304,4 @@ Built for `linux/amd64`.
 - **Fix** — Replacement History panel now refreshes immediately when a replacement agent first reports in (same root cause)
 - **Fix** — `demo_agents.py` multi-worker document queue was not thread-safe; fixed with a shared lock and `deque.popleft()` replacing the unguarded `list.pop(0)`
 - **Fix** — Live Feed React keys were index-based, causing unnecessary full-list re-renders on every new event; now uses a stable monotonic counter
+- **Docs** — Clarified that the dashboard is model-agnostic and requires no Anthropic API key or AI SDK

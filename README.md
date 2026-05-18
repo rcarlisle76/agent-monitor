@@ -2,6 +2,8 @@
 
 A real-time dashboard for monitoring AI agent pipelines. Agents report their status, accuracy, and task progress via a simple REST API. The dashboard displays a live feed, hierarchy tree, task history, metrics, and a full replacement chain history.
 
+Works with any AI model or provider — Claude, GPT-4, Gemini, local models, or no LLM at all. Agents communicate over plain HTTP; no Anthropic API key or any other AI SDK is required.
+
 ---
 
 ## Quick start

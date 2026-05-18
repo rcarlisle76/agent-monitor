@@ -101,7 +101,7 @@ export default function App() {
           <button
             onClick={() => setDark(d => !d)}
             title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-base leading-none"
+            className="w-7 h-7 flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors text-sm"
           >
             {dark ? '☀' : '☽'}
           </button>
@@ -125,7 +125,7 @@ export default function App() {
 
         <div className="flex-1 overflow-hidden">
           {activeTab === 'feed' && <LiveFeed lastEvent={lastEvent} />}
-          {activeTab === 'tree' && <HierarchyTree lastEvent={lastEvent} />}
+          {activeTab === 'tree' && <HierarchyTree lastEvent={lastEvent} dark={dark} />}
           {activeTab === 'history' && <TaskHistory />}
           {activeTab === 'replacements' && <ReplacementHistory lastEvent={lastEvent} />}
           {activeTab === 'metrics' && <MetricsPanel lastEvent={lastEvent} />}

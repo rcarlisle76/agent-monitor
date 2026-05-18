@@ -18,12 +18,12 @@ const STATUS_COLORS = {
   idle: '#6b7280',
   completed: '#22c55e',
   error: '#ef4444',
-  terminated: '#374151',
+  terminated: '#9ca3af',
 }
 
 function AgentNode({ data }) {
   const isTerminated = data.status === 'terminated'
-  const color = isTerminated ? '#374151' : data.flagged ? '#ef4444' : (STATUS_COLORS[data.status] ?? '#6b7280')
+  const color = isTerminated ? '#9ca3af' : data.flagged ? '#ef4444' : (STATUS_COLORS[data.status] ?? '#6b7280')
   const accuracy = data.accuracy
   const isLR = data.direction === 'LR'
   const targetPos = isLR ? Position.Left : Position.Top
@@ -32,15 +32,17 @@ function AgentNode({ data }) {
   return (
     <div
       className={`rounded-lg border px-4 py-3 text-xs shadow-lg min-w-[160px] max-w-[220px] ${
-        isTerminated ? 'bg-gray-950 opacity-50' : 'bg-gray-900'
+        isTerminated
+          ? 'bg-gray-100 dark:bg-gray-950 opacity-50'
+          : 'bg-white dark:bg-gray-900'
       }`}
       style={{ borderColor: color, borderWidth: data.flagged && !isTerminated ? 2 : 1 }}
     >
       <Handle type="target" position={targetPos} style={{ background: color }} />
       <div className="flex items-center justify-between gap-2 mb-1">
-        <p className={`font-bold truncate flex-1 ${isTerminated ? 'text-gray-500 line-through' : 'text-gray-100'}`}>
-          {data.flagged && !isTerminated && <span className="text-red-400 mr-1">⚑</span>}
-          {isTerminated && <span className="text-gray-500 mr-1">✕</span>}
+        <p className={`font-bold truncate flex-1 ${isTerminated ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-800 dark:text-gray-100'}`}>
+          {data.flagged && !isTerminated && <span className="text-red-500 dark:text-red-400 mr-1">⚑</span>}
+          {isTerminated && <span className="mr-1">✕</span>}
           {data.label}
         </p>
         <span
@@ -52,12 +54,12 @@ function AgentNode({ data }) {
       </div>
 
       {data.replaces && (
-        <p className="text-indigo-400 text-[10px] mb-1">↺ replacing {data.replaces}</p>
+        <p className="text-indigo-600 dark:text-indigo-400 text-[10px] mb-1">↺ replacing {data.replaces}</p>
       )}
 
       {accuracy != null && !isTerminated && (
         <div className="flex items-center gap-1 mt-1">
-          <div className="flex-1 h-1.5 rounded-full bg-gray-700 overflow-hidden">
+          <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
               style={{
@@ -68,7 +70,7 @@ function AgentNode({ data }) {
           </div>
           <span
             className={`text-[10px] font-mono flex-shrink-0 ${
-              accuracy < 70 ? 'text-red-400' : 'text-gray-400'
+              accuracy < 70 ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
             }`}
           >
             {accuracy.toFixed(1)}%
@@ -77,15 +79,15 @@ function AgentNode({ data }) {
       )}
 
       {data.flagged && !isTerminated && (
-        <p className="text-red-400 text-[10px] font-semibold mt-1">⚠ Flagged for termination</p>
+        <p className="text-red-500 dark:text-red-400 text-[10px] font-semibold mt-1">⚠ Flagged for termination</p>
       )}
 
       {isTerminated && (
-        <p className="text-gray-600 text-[10px] mt-1">Terminated by orchestrator</p>
+        <p className="text-gray-400 dark:text-gray-600 text-[10px] mt-1">Terminated by orchestrator</p>
       )}
 
       {data.task && !data.flagged && !isTerminated && (
-        <p className="text-gray-400 mt-1 truncate text-[10px]">{data.task}</p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1 truncate text-[10px]">{data.task}</p>
       )}
 
       <Handle type="source" position={sourcePos} style={{ background: color }} />
@@ -97,7 +99,7 @@ const NODE_TYPES = { agentNode: AgentNode }
 const NODE_WIDTH = 220
 const NODE_HEIGHT = 90
 
-function layoutNodes(agents, direction = 'LR') {
+function layoutNodes(agents, direction = 'LR', dark = true) {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
   g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 120 })
@@ -123,7 +125,7 @@ function layoutNodes(agents, direction = 'LR') {
       id: `${a.parent_id}-${a.agent_id}`,
       source: a.parent_id,
       target: a.agent_id,
-      style: { stroke: a.flagged ? '#7f1d1d' : '#4b5563' },
+      style: { stroke: a.flagged ? '#ef4444' : (dark ? '#4b5563' : '#9ca3af') },
     }))
 
   nodes.forEach((n) => g.setNode(n.id, { width: NODE_WIDTH, height: NODE_HEIGHT }))
@@ -144,7 +146,7 @@ async function fetchAgents() {
   return res.json()
 }
 
-export default function HierarchyTree({ lastEvent }) {
+export default function HierarchyTree({ lastEvent, dark = true }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [direction, setDirection] = useState('LR')
@@ -160,10 +162,10 @@ export default function HierarchyTree({ lastEvent }) {
 
   useEffect(() => {
     if (!agents?.length) return
-    const { nodes: n, edges: e } = layoutNodes(agents, direction)
+    const { nodes: n, edges: e } = layoutNodes(agents, direction, dark)
     setNodes(n)
     setEdges(e)
-  }, [agents, direction, setNodes, setEdges])
+  }, [agents, direction, dark, setNodes, setEdges])
 
   const flaggedCount = agents?.filter((a) => a.flagged).length ?? 0
 
@@ -210,9 +212,9 @@ export default function HierarchyTree({ lastEvent }) {
             onEdgesChange={onEdgesChange}
             nodeTypes={NODE_TYPES}
             fitView
-            colorMode="dark"
+            colorMode={dark ? 'dark' : 'light'}
           >
-            <Background color="#374151" gap={24} />
+            <Background color={dark ? '#374151' : '#e5e7eb'} gap={24} />
             <Controls />
             <MiniMap nodeColor={(n) => n.data?.flagged ? '#ef4444' : (STATUS_COLORS[n.data?.status] ?? '#6b7280')} />
           </ReactFlow>
